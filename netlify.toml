@@ -1,0 +1,7 @@
+[build]
+  command = "pnpm build"
+  publish = ".next"
+
+[build.environment]
+  # Add necessary Netlify environment variables here
+  # e.g., DATABASE_URL = "postgres://..."
