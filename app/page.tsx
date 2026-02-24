@@ -242,12 +242,22 @@ export default function CalendarApp() {
         </header>
 
         <div className="cal-nav" style={{ marginBottom: "1.5rem", justifyContent: "center" }}>
-          <button className="btn btn-secondary" onClick={handlePrevMonth}>
-            &larr; Prev
+          <button
+            className="btn btn-secondary"
+            onClick={handlePrevMonth}
+            aria-label="Previous Month"
+            style={{ padding: "0.5rem 1rem" }}
+          >
+            &#8592;
           </button>
           <h2>{currentDate.toLocaleString("default", { month: "long", year: "numeric" })}</h2>
-          <button className="btn btn-secondary" onClick={handleNextMonth}>
-            Next &rarr;
+          <button
+            className="btn btn-secondary"
+            onClick={handleNextMonth}
+            aria-label="Next Month"
+            style={{ padding: "0.5rem 1rem" }}
+          >
+            &#8594;
           </button>
         </div>
 
@@ -288,7 +298,6 @@ export default function CalendarApp() {
                         }}
                         title={`${dep.title} (${new Date(dep.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })})`}
                       >
-                        {new Date(dep.time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} -{" "}
                         {dep.title}
                       </div>
                     ))}
