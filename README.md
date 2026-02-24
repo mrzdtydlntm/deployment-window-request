@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Deployment Window Calendar App
+A modern, beautiful, full-stack Next.js application built to seamlessly manage and track scheduled deployment windows via an interactive calendar interface.
 
-## Getting Started
+## Tech Stack
+- **Framework**: [Next.js 15 (App Router)](https://nextjs.org/)
+- **Language**: TypeScript
+- **Package Manager**: `pnpm`
+- **Styling**: Vanilla CSS (Custom Glassmorphism + Dark Mode theme)
+- **Database**: PostgreSQL (specifically built for [Neon Serverless Postgres](https://neon.tech))
+- **ORM**: [Sequelize](https://sequelize.org/)
 
-First, run the development server:
+## Application Features
+- **Dynamic Calendar View**: View requested deployment windows intuitively laid out in a month-by-month calendar view with quick badging indicators.
+- **Request Management**: Add, Edit, and Delete deployment requests with zero-hassle. 
+- **Required Validations**: Enforces requirements for `Title`, `Time`, `Team Issuer`, and `Issuer Name`.
+- **References**: Attach custom MoP Links (URLs) to your deployments. *(File uploads were removed in favor of direct Links to ensure seamless serverless hosting).*
+- **Elegant UI**: Completely custom glassmorphic styling.
+- **Instant Feedback**: Beautiful "Toaster" notifications alert you on successful additions, updates, or deletions.
+- **Safety Checks**: Preventing accidental wipes by requiring title-confirmation matching before deleting any deployment.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Prerequisites
+Ensure your local development environment has the following installed:
+1. **Node.js**: v24.13.0 or higher.
+2. **Package Manager**: [pnpm](https://pnpm.io/installation)
+3. **Database**: A PostgreSQL database connection string (Neon DB is recommended).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup & Local Development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Clone the repository** and navigate to the project root:
+   ```bash
+   cd deployment-window
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Install dependencies** using `pnpm`:
+   ```bash
+   pnpm install
+   ```
 
-## Learn More
+3. **Environment Setup**:
+   Create a `.env.local` file at the root of the project to hold your database credentials:
+   ```env
+   DATABASE_URL="postgres://user:password@ep-your-neon-db.region.aws.neon.tech/neondb?sslmode=require"
+   ```
+   *Note: If `DATABASE_URL` is omitted, the application will attempt to fallback to a local instance at `postgres://postgres:postgres@localhost:5432/deployment_window`.*
 
-To learn more about Next.js, take a look at the following resources:
+4. **Run the Development Server**:
+   ```bash
+   pnpm dev
+   ```
+   *The database schema (tables) will automatically synchronize on the first startup/API request.*
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+5. **Open your browser** and visit `http://localhost:3000`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deployment (Netlify)
+This project is configured out-of-the-box for serverless deployments on Netlify.
+Since it stores references to external links (MoP links) rather than relying on an ephemeral server filesystem, no complicated blob-storage setups are required!
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push your repository to your Git provider (GitHub/GitLab).
+2. Create a New Site in your Netlify Dashboard and link your repository.
+3. Configure **Environment Variables**: Add your `DATABASE_URL` in the Netlify settings.
+4. Deploy! The `netlify.toml` file will automatically define the build commands (`pnpm build`).
