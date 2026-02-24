@@ -133,7 +133,7 @@ export default function CalendarApp() {
 
     const data = new FormData();
     data.append("title", formData.title);
-    data.append("time", formData.time);
+    data.append("time", new Date(formData.time).toISOString());
     data.append("teamIssuer", formData.teamIssuer);
     data.append("issuerName", formData.issuerName);
     if (formData.crq) data.append("crq", formData.crq);
