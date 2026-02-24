@@ -2,6 +2,12 @@
 
 import { useState, useEffect, FormEvent } from "react";
 
+type ToastMessage = {
+  id: number;
+  message: string;
+  type: "success" | "error";
+};
+
 type Deployment = {
   id: number;
   title: string;
@@ -19,8 +25,18 @@ export default function CalendarApp() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
 
   const [selectedDeployment, setSelectedDeployment] = useState<Deployment | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    const id = Date.now();
+    setToast({ id, message, type });
+    setTimeout(() => {
+      setToast((prev) => (prev?.id === id ? null : prev));
+    }, 4000); // Hide after 4 seconds
+  };
 
   useEffect(() => {
     fetchDeployments();
@@ -125,22 +141,27 @@ export default function CalendarApp() {
     if (formData.mopLink) data.append("mopLink", formData.mopLink);
 
     try {
-      const res = await fetch("/api/deployments", {
-        method: "POST",
+      const url = editingId ? `/api/deployments/${editingId}` : "/api/deployments";
+      const method = editingId ? "PUT" : "POST";
+      const res = await fetch(url, {
+        method,
         body: data,
       });
       if (res.ok) {
         setIsModalOpen(false);
+        setEditingId(null);
         setFormData({ title: "", time: "", teamIssuer: "", issuerName: "", crq: "", rlm: "", mopLink: "" });
         setFormErrors({});
         fetchDeployments();
+        const formattedTime = new Date(formData.time).toLocaleString([], { dateStyle: "short", timeStyle: "short" });
+        showToast(`${editingId ? "Updated" : "Added"} Request: ${formData.title} (${formattedTime})`, "success");
       } else {
         const err = await res.json();
-        alert("Failed: " + err.error);
+        showToast("Failed: " + err.error, "error");
       }
     } catch (err) {
       console.error(err);
-      alert("An error occurred");
+      showToast("An error occurred", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -157,12 +178,65 @@ export default function CalendarApp() {
     });
   };
 
+  const handleEditClick = (dep: Deployment) => {
+    setEditingId(dep.id);
+
+    // Format Date for datetime-local input YYYY-MM-DDTHH:mm
+    const dateObj = new Date(dep.time);
+    const tzOffset = dateObj.getTimezoneOffset() * 60000;
+    const localISOTime = new Date(dateObj.getTime() - tzOffset).toISOString().slice(0, 16);
+
+    setFormData({
+      title: dep.title,
+      time: localISOTime,
+      teamIssuer: dep.teamIssuer,
+      issuerName: dep.issuerName,
+      crq: dep.crq || "",
+      rlm: dep.rlm || "",
+      mopLink: dep.mopLink || "",
+    });
+    setSelectedDeployment(null);
+    setFormErrors({});
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteClick = async (id: number, title: string) => {
+    const confirmMsg = `To delete this deployment, please type its title exactly:\n"${title}"`;
+    const userInput = window.prompt(confirmMsg);
+
+    if (userInput === title) {
+      try {
+        const res = await fetch(`/api/deployments/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          setSelectedDeployment(null);
+          fetchDeployments();
+          showToast(`Deleted Request: ${title}`, "success");
+        } else {
+          showToast("Failed to delete deployment.", "error");
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("An error occurred while deleting.", "error");
+      }
+    } else if (userInput !== null) {
+      showToast("Title did not match. Deletion cancelled.", "error");
+    }
+  };
+
   return (
     <main>
       <div className="calendar-container glass-panel" style={{ padding: "2rem" }}>
         <header className="calendar-header">
           <h1>Deployment Window Request</h1>
-          <button className="btn" onClick={() => setIsModalOpen(true)}>
+          <button
+            className="btn"
+            onClick={() => {
+              setEditingId(null);
+              setFormData({ title: "", time: "", teamIssuer: "", issuerName: "", crq: "", rlm: "", mopLink: "" });
+              setFormErrors({});
+              setIsModalOpen(true);
+            }}
+          >
             + Request Deployment
           </button>
         </header>
@@ -232,7 +306,7 @@ export default function CalendarApp() {
             <button className="close-btn" onClick={() => setIsModalOpen(false)}>
               &times;
             </button>
-            <h3>Request Deployment</h3>
+            <h3>{editingId ? "Edit Deployment" : "Request Deployment"}</h3>
             <form onSubmit={handleSubmit} noValidate>
               <div className="form-group">
                 <label>
@@ -361,6 +435,8 @@ export default function CalendarApp() {
                     <>
                       <div className="loader" style={{ width: 16, height: 16, borderWidth: 2 }}></div> Submitting...
                     </>
+                  ) : editingId ? (
+                    "Save Changes"
                   ) : (
                     "Submit Request"
                   )}
@@ -418,7 +494,55 @@ export default function CalendarApp() {
                 )}
               </div>
             </div>
+
+            <div style={{ marginTop: "2.5rem", display: "flex", justifyContent: "flex-end", gap: "1rem" }}>
+              <button
+                className="btn btn-secondary"
+                style={{ backgroundColor: "rgba(239, 68, 68, 0.2)", color: "#fca5a5" }}
+                onClick={() => handleDeleteClick(selectedDeployment.id, selectedDeployment.title)}
+              >
+                Delete
+              </button>
+              <button className="btn" onClick={() => handleEditClick(selectedDeployment)}>
+                Edit Deployment
+              </button>
+            </div>
           </div>
+        </div>
+      )}
+
+      {toast && (
+        <div
+          className="toast-notification glass-panel"
+          style={{
+            position: "fixed",
+            bottom: "2rem",
+            right: "2rem",
+            zIndex: 9999,
+            padding: "1rem 1.5rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+            borderLeft: `4px solid ${toast.type === "success" ? "var(--success, #10b981)" : "var(--danger, #ef4444)"}`,
+            animation: "slideInRight 0.3s ease-out forwards",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+          }}
+        >
+          <span style={{ fontSize: "1.2rem" }}>{toast.type === "success" ? "✅" : "⚠️"}</span>
+          <span style={{ fontWeight: 500 }}>{toast.message}</span>
+          <button
+            style={{
+              background: "none",
+              border: "none",
+              color: "var(--text-secondary)",
+              cursor: "pointer",
+              marginLeft: "1rem",
+              fontSize: "1.2rem",
+            }}
+            onClick={() => setToast(null)}
+          >
+            &times;
+          </button>
         </div>
       )}
     </main>
