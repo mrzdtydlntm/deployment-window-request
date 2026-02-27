@@ -20,7 +20,7 @@ Deployment.init(
       primaryKey: true,
     },
     title: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: false,
       validate: { notEmpty: true },
     },
@@ -47,7 +47,7 @@ Deployment.init(
       allowNull: true,
     },
     mopLink: {
-      type: DataTypes.STRING,
+      type: DataTypes.TEXT,
       allowNull: true,
     },
   },
