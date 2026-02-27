@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Deployment } from "@/models/Deployment";
 import { syncDatabase } from "@/lib/init-db";
+import { checkAndSendLateDeploymentAlert } from "@/lib/cron";
 
 let isDbSynced = false;
 
@@ -52,6 +53,8 @@ export async function POST(req: NextRequest) {
       rlm,
       mopLink,
     });
+
+    await checkAndSendLateDeploymentAlert(newDeployment);
 
     return NextResponse.json(newDeployment, { status: 201 });
   } catch (error) {
