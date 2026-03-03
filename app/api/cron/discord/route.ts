@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { sendDiscordDailyReport } from "@/lib/cron";
 
-export async function GET() {
+export async function POST() {
   const result = await sendDiscordDailyReport();
 
   if (!result.success) {
